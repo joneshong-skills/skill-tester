@@ -352,7 +352,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--save",
         action="store_true",
-        help="Auto-save to ~/Downloads/skill-test-report-{date}.{ext}",
+        help="Auto-save to ~/Claude/skills/skill-tester/skill-test-report-{date}.{ext}",
     )
     return parser.parse_args(argv)
 
@@ -381,9 +381,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.save:
         ext = "md" if args.fmt == "md" else "json"
         today = data.get("meta", {}).get("date", date.today().isoformat())
-        save_path = os.path.expanduser(
-            "~/Downloads/skill-test-report-{}.{}".format(today, ext)
-        )
+        _root = os.path.expanduser(os.environ.get("CLAUDE_OUTPUTS_DIR", "~/Claude/skills"))
+        save_path = os.path.join(_root, "skill-tester", "skill-test-report-{}.{}".format(today, ext))
         outputs.append(save_path)
 
     # Write to file(s) if specified
