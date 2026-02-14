@@ -250,6 +250,9 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
     # pip install / pip3 install
     for m in re.finditer(r"(?:pip3?|python3?\s+-m\s+pip)\s+install\s+(.+)", code_text):
         pkgs_str = m.group(1).strip()
+        # Skip file-based installs: -r requirements.txt / --requirement requirements.txt
+        if re.search(r"(?:^|\s)(?:-r|--requirement)\b", pkgs_str):
+            continue
         # Remove flags like -q, --upgrade, etc.
         for token in pkgs_str.split():
             if token.startswith("-"):
@@ -259,9 +262,11 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
             if pkg and _is_valid_package_name(pkg):
                 deps["pip"].append(pkg)
 
-    # brew install
+    # brew install (skip --cask installs: binary name often differs from cask name)
     for m in re.finditer(r"brew\s+install\s+(.+)", code_text):
         pkgs_str = m.group(1).strip()
+        if re.search(r"(?:^|\s)--cask\b", pkgs_str):
+            continue
         for token in pkgs_str.split():
             if token.startswith("-"):
                 continue
@@ -270,7 +275,8 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
                 deps["brew"].append(pkg)
 
     # npm install / npm install -g
-    for m in re.finditer(r"npm\s+install\s+(?:-g\s+)?(.+)", code_text):
+    # Use [ \t]+ instead of \s+ to prevent matching across newlines
+    for m in re.finditer(r"npm[ \t]+install[ \t]+(?:-g[ \t]+)?(.+)", code_text):
         pkgs_str = m.group(1).strip()
         for token in pkgs_str.split():
             if token.startswith("-"):
@@ -347,20 +353,23 @@ def check_t1(skill_path: str) -> List[Dict[str, str]]:
         detail = "" if rc == 0 else stderr.strip().split("\n")[-1] if stderr else "import failed"
         results.append({"name": pkg, "type": "pip", "status": status, "detail": detail})
 
-    # Build set of local module names (sibling .py files in scripts/)
+    # Build set of local module names (sibling .py files and directories in scripts/ and skill root)
     local_modules = set()  # type: set
     for f in py_files:
         basename = os.path.splitext(os.path.basename(f))[0]
         local_modules.add(basename)
-    # Also add directory names under scripts/ (local packages)
-    if os.path.isdir(scripts_dir):
-        try:
-            for item in os.listdir(scripts_dir):
-                item_path = os.path.join(scripts_dir, item)
-                if os.path.isdir(item_path):
-                    local_modules.add(item)
-        except Exception:
-            pass
+    # Also add directory names and .py basenames from scripts/ and skill root (local packages)
+    for scan_dir in [scripts_dir, skill_path]:
+        if os.path.isdir(scan_dir):
+            try:
+                for item in os.listdir(scan_dir):
+                    item_path = os.path.join(scan_dir, item)
+                    if os.path.isdir(item_path):
+                        local_modules.add(item)
+                    elif item.endswith(".py"):
+                        local_modules.add(os.path.splitext(item)[0])
+            except Exception:
+                pass
 
     # 4) Check pip deps discovered from imports (not already in SKILL.md)
     for mod in used_imports:
