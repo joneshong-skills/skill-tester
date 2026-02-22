@@ -43,9 +43,9 @@ FAIL    = Any T1–T4 hard failure (missing dep, syntax error, broken ref)
 
 ### Step 0 — Enumerate Skills
 
-> **Sandbox limitation**: `sandbox_execute` cannot access `~/.claude/` (path whitelist: `~/Claude/` + `/tmp/`). T1–T4 automated checks (dependency, syntax, consistency, runtime) across all skills must run via `Bash` instead.
+> **Sandbox acceleration**: T1–T4 automated checks run in `sandbox_execute` — `~/.claude/` imports are now supported.
 >
-> Non-functional (sandbox path blocked) — use Bash instead:
+> Preferred (Sandbox):
 > ```python
 > import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-tester/scripts')
 > import scan_env, gen_report
@@ -186,10 +186,14 @@ python3 scripts/gen_report.py --input results.json --format json
 
 ## Sandbox Optimization
 
-This skill **cannot use sandbox** for its primary operations (`~/.claude/` path is outside sandbox whitelist `~/Claude/` + `/tmp/`). Use `Bash` to run scripts:
+This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
 
-- **Batch T1–T4 checks**: Run via Bash: `python3 ~/.claude/skills/skill-tester/scripts/scan_env.py` — run dependency, syntax, consistency, and runtime checks across all skills in one call
-- **Report generation**: Run via Bash: `python3 ~/.claude/skills/skill-tester/scripts/gen_report.py` — aggregate T1–T4 results and produce markdown or JSON report
+- **Batch T1–T4 checks**: Import `scripts/scan_env.py` in sandbox to run dependency, syntax, consistency, and runtime checks across all skills in one call
+- **Report generation**: Import `scripts/gen_report.py` in sandbox to aggregate T1–T4 results and produce markdown or JSON report
+
+Fallback (Bash):
+- `python3 ~/.claude/skills/skill-tester/scripts/scan_env.py` — run checks via Bash when sandbox is unavailable
+- `python3 ~/.claude/skills/skill-tester/scripts/gen_report.py` — generate report via Bash
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
