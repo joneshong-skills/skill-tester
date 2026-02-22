@@ -43,9 +43,9 @@ FAIL    = Any T1–T4 hard failure (missing dep, syntax error, broken ref)
 
 ### Step 0 — Enumerate Skills
 
-> **Sandbox acceleration**: T1–T4 automated checks (dependency, syntax, consistency, runtime) across all skills benefit from `sandbox_execute`.
+> **Sandbox limitation**: `sandbox_execute` cannot access `~/.claude/` (path whitelist: `~/Claude/` + `/tmp/`). T1–T4 automated checks (dependency, syntax, consistency, runtime) across all skills must run via `Bash` instead.
 >
-> Preferred (Sandbox):
+> Non-functional (sandbox path blocked) — use Bash instead:
 > ```python
 > import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-tester/scripts')
 > import scan_env, gen_report
@@ -165,6 +165,11 @@ This skill fits into the lifecycle pipeline as a gate between Audit and Optimize
 skill-curator (Audit) → skill-tester (Test) → skill-optimizer (Optimize) → skill-publisher (Publish) → skill-catalog (Catalog)
 ```
 
+Related skills:
+- **systematic-debugging** — Failed skill tests trigger systematic debugging
+- **test-driven-development** — Skill testing follows TDD principles
+- **verification-before-completion** — Skill tests are part of completion verification
+
 When called from skill-lifecycle, output JSON to stdout for pipeline consumption:
 ```bash
 python3 scripts/gen_report.py --input results.json --format json
@@ -181,10 +186,10 @@ python3 scripts/gen_report.py --input results.json --format json
 
 ## Sandbox Optimization
 
-This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
+This skill **cannot use sandbox** for its primary operations (`~/.claude/` path is outside sandbox whitelist `~/Claude/` + `/tmp/`). Use `Bash` to run scripts:
 
-- **Batch T1–T4 checks**: Import `scripts/scan_env.py` in sandbox to run dependency, syntax, consistency, and runtime checks across all skills in one call
-- **Report generation**: Import `scripts/gen_report.py` in sandbox to aggregate T1–T4 results and produce markdown or JSON report
+- **Batch T1–T4 checks**: Run via Bash: `python3 ~/.claude/skills/skill-tester/scripts/scan_env.py` — run dependency, syntax, consistency, and runtime checks across all skills in one call
+- **Report generation**: Run via Bash: `python3 ~/.claude/skills/skill-tester/scripts/gen_report.py` — aggregate T1–T4 results and produce markdown or JSON report
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
