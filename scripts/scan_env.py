@@ -33,6 +33,17 @@ from typing import Any, Dict, List, Tuple
 # ---------------------------------------------------------------------------
 # Pip package name -> Python import name mapping
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# npm package name -> binary name mapping (for brew-installed CLIs)
+# ---------------------------------------------------------------------------
+NPM_TO_BINARY: Dict[str, str] = {
+    "@openai/codex": "codex",
+    "@google/gemini-cli": "gemini",
+}
+
+# ---------------------------------------------------------------------------
+# Pip package name -> Python import name mapping
+# ---------------------------------------------------------------------------
 PIP_TO_IMPORT: Dict[str, str] = {
     "python-pptx": "pptx",
     "Pillow": "PIL",
@@ -85,10 +96,48 @@ STDLIB_MODULES = {
 SUBPROCESS_TIMEOUT = 15  # seconds for most subprocess calls
 RUNTIME_TIMEOUT = 10     # seconds for T4 --help
 
+# Regex patterns for detecting relative imports (library modules)
+_RELATIVE_IMPORT_RE = re.compile(r"^\s*from\s+\.+\s*import\s", re.MULTILINE)
+_RELATIVE_FROM_RE = re.compile(r"^\s*from\s+\.+\w+\s+import\s", re.MULTILINE)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _find_python() -> str:
+    """Find the best python3 binary, preferring uv-managed."""
+    candidates = [
+        os.path.expanduser("~/.local/bin/python3"),
+        # whatever's in PATH
+        "python3",
+    ]
+    for c in candidates:
+        try:
+            proc = subprocess.run(
+                [c, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if proc.returncode == 0:
+                return c
+        except Exception:
+            continue
+    return "python3"
+
+
+# Module-level cache so we only probe once
+_PYTHON_BIN = ""  # type: str
+
+
+def get_python() -> str:
+    """Return cached best python3 path."""
+    global _PYTHON_BIN
+    if not _PYTHON_BIN:
+        _PYTHON_BIN = _find_python()
+    return _PYTHON_BIN
+
 
 def run_cmd(cmd: List[str], timeout: int = SUBPROCESS_TIMEOUT) -> Tuple[int, str, str]:
     """Run a command, return (returncode, stdout, stderr). Never raises."""
@@ -248,8 +297,11 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
     code_text = "\n".join(code_lines)
 
     # pip install / pip3 install
-    for m in re.finditer(r"(?:pip3?|python3?\s+-m\s+pip)\s+install\s+(.+)", code_text):
+    for m in re.finditer(r"(?:pip3?|python3?[ \t]+-m[ \t]+pip)[ \t]+install[ \t]+(.+)", code_text):
         pkgs_str = m.group(1).strip()
+        # Skip file-based installs: -r requirements.txt / --requirement requirements.txt
+        if re.search(r"(?:^|\s)(?:-r|--requirement)\b", pkgs_str):
+            continue
         # Remove flags like -q, --upgrade, etc.
         for token in pkgs_str.split():
             if token.startswith("-"):
@@ -259,9 +311,11 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
             if pkg and _is_valid_package_name(pkg):
                 deps["pip"].append(pkg)
 
-    # brew install
+    # brew install (skip --cask installs: binary name often differs from cask name)
     for m in re.finditer(r"brew\s+install\s+(.+)", code_text):
         pkgs_str = m.group(1).strip()
+        if re.search(r"(?:^|\s)--cask\b", pkgs_str):
+            continue
         for token in pkgs_str.split():
             if token.startswith("-"):
                 continue
@@ -270,7 +324,8 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
                 deps["brew"].append(pkg)
 
     # npm install / npm install -g
-    for m in re.finditer(r"npm\s+install\s+(?:-g\s+)?(.+)", code_text):
+    # Use [ \t]+ instead of \s+ to prevent matching across newlines
+    for m in re.finditer(r"npm[ \t]+install[ \t]+(?:-g[ \t]+)?(.+)", code_text):
         pkgs_str = m.group(1).strip()
         for token in pkgs_str.split():
             if token.startswith("-"):
@@ -334,33 +389,48 @@ def check_t1(skill_path: str) -> List[Dict[str, str]]:
     py_files = find_py_files(scripts_dir)
     used_imports = extract_imports_from_py(py_files)
 
-    # 3) Check pip deps
+    # 3) Check pip deps (use uv-managed python if available)
+    python_bin = get_python()
     checked_pip = set()  # type: set
     for pkg in deps["pip"]:
         import_mod = import_name_for_pip(pkg)
         checked_pip.add(import_mod)
         rc, _, stderr = run_cmd(
-            [sys.executable, "-c", "import " + import_mod],
+            [python_bin, "-c", "import " + import_mod],
             timeout=SUBPROCESS_TIMEOUT,
         )
         status = "ok" if rc == 0 else "missing"
         detail = "" if rc == 0 else stderr.strip().split("\n")[-1] if stderr else "import failed"
         results.append({"name": pkg, "type": "pip", "status": status, "detail": detail})
 
-    # Build set of local module names (sibling .py files in scripts/)
+    # Build set of local module names (sibling .py files and directories in scripts/ and skill root)
     local_modules = set()  # type: set
     for f in py_files:
         basename = os.path.splitext(os.path.basename(f))[0]
         local_modules.add(basename)
-    # Also add directory names under scripts/ (local packages)
-    if os.path.isdir(scripts_dir):
+        # Also add contents of each .py file's parent directory (handles subdirectory imports)
+        parent_dir = os.path.dirname(f)
         try:
-            for item in os.listdir(scripts_dir):
-                item_path = os.path.join(scripts_dir, item)
+            for item in os.listdir(parent_dir):
+                item_path = os.path.join(parent_dir, item)
                 if os.path.isdir(item_path):
                     local_modules.add(item)
+                elif item.endswith(".py"):
+                    local_modules.add(os.path.splitext(item)[0])
         except Exception:
             pass
+    # Also add directory names and .py basenames from scripts/ and skill root (local packages)
+    for scan_dir in [scripts_dir, skill_path]:
+        if os.path.isdir(scan_dir):
+            try:
+                for item in os.listdir(scan_dir):
+                    item_path = os.path.join(scan_dir, item)
+                    if os.path.isdir(item_path):
+                        local_modules.add(item)
+                    elif item.endswith(".py"):
+                        local_modules.add(os.path.splitext(item)[0])
+            except Exception:
+                pass
 
     # 4) Check pip deps discovered from imports (not already in SKILL.md)
     for mod in used_imports:
@@ -372,7 +442,7 @@ def check_t1(skill_path: str) -> List[Dict[str, str]]:
             continue
         # Only flag as informational -- these are imports found in code
         rc, _, _ = run_cmd(
-            [sys.executable, "-c", "import " + mod],
+            [python_bin, "-c", "import " + mod],
             timeout=SUBPROCESS_TIMEOUT,
         )
         if rc != 0:
@@ -386,15 +456,36 @@ def check_t1(skill_path: str) -> List[Dict[str, str]]:
     # 5) Check brew deps
     for pkg in deps["brew"]:
         rc, _, _ = run_cmd(["which", pkg], timeout=SUBPROCESS_TIMEOUT)
+        if rc != 0:
+            # Fallback: data-only packages (e.g. tesseract-lang) have no binary
+            rc, _, _ = run_cmd(["brew", "list", pkg], timeout=SUBPROCESS_TIMEOUT)
         status = "ok" if rc == 0 else "missing"
         results.append({"name": pkg, "type": "brew", "status": status, "detail": ""})
 
-    # 6) Check npm deps
+    # 6) Check npm deps (with fallback to `which` for brew-installed CLIs)
     for pkg in deps["npm"]:
         rc, stdout, _ = run_cmd(["npm", "list", "-g", pkg], timeout=SUBPROCESS_TIMEOUT)
         # npm list -g returns 0 if found
-        status = "ok" if rc == 0 and pkg in stdout else "missing"
-        results.append({"name": pkg, "type": "npm", "status": status, "detail": ""})
+        if rc == 0 and pkg in stdout:
+            status = "ok"
+            detail = ""
+        else:
+            # Fallback: check if the binary is on PATH (e.g. installed via brew)
+            binary = NPM_TO_BINARY.get(pkg)
+            if not binary:
+                # Guess binary name: last segment of scoped package, or package name itself
+                binary = pkg.split("/")[-1] if "/" in pkg else pkg
+                # Strip common suffixes like -cli
+                if binary.endswith("-cli"):
+                    binary = binary[:-4]
+            rc2, _, _ = run_cmd(["which", binary], timeout=SUBPROCESS_TIMEOUT)
+            if rc2 == 0:
+                status = "ok"
+                detail = "found via PATH (brew or other install)"
+            else:
+                status = "missing"
+                detail = ""
+        results.append({"name": pkg, "type": "npm", "status": status, "detail": detail})
 
     return results
 
@@ -605,11 +696,105 @@ def check_t3(skill_path: str) -> List[Dict[str, str]]:
 # T4 - Runtime Check
 # ---------------------------------------------------------------------------
 
+def _is_library_module(source: str) -> bool:
+    """Check if source contains relative imports (library module, not standalone)."""
+    return bool(_RELATIVE_IMPORT_RE.search(source) or _RELATIVE_FROM_RE.search(source))
+
+
+def _is_runtime_guard_error(stderr: str) -> bool:
+    """Check if stderr indicates the script intentionally refuses direct execution."""
+    lower = stderr.lower()
+    patterns = [
+        "runtimeerror: this module should not be run directly",
+        "runtimeerror: not meant to be run directly",
+        "runtimeerror: do not run this module directly",
+        "this script is not meant to be run directly",
+        "this module is not meant to be run directly",
+    ]
+    return any(p in lower for p in patterns)
+
+
+def _is_real_runtime_error(text: str) -> bool:
+    """Return True if the text contains a real import/syntax/runtime error.
+
+    These indicate the script is NOT runnable (broken dependencies, bad syntax,
+    etc.) and should remain status='error'.
+    """
+    real_error_patterns = [
+        "ModuleNotFoundError",
+        "ImportError",
+        "SyntaxError",
+        "IndentationError",
+        "TabError",
+        "NameError",
+        "AttributeError: module",
+        "cannot import name",
+        "No module named",
+    ]
+    return any(p in text for p in real_error_patterns)
+
+
+def _analyse_help_failure(
+    rc: int, stdout: str, stderr: str, combined: str
+) -> Tuple[str, str]:
+    """Classify a non-zero exit from ``python script.py --help``.
+
+    T4's purpose is to verify a script is *runnable* (no import errors,
+    no syntax errors).  A script that correctly rejects ``--help`` as
+    an invalid argument IS runnable.
+
+    Returns (status, detail).
+    """
+    # 1. Real runtime errors -> always "error"
+    if _is_real_runtime_error(combined):
+        err_line = stderr.strip().split("\n")[-1] if stderr.strip() else "exit code {}".format(rc)
+        return ("error", err_line)
+
+    # 2. Script treated --help as a filename -> FileNotFoundError on "--help"
+    #    e.g.  "FileNotFoundError: [Errno 2] No such file or directory: '--help'"
+    if "FileNotFoundError" in combined and "--help" in combined:
+        return ("ok", "no --help support (argparse not used)")
+
+    # 3. Script echoed back "--help" in a short error message
+    #    e.g.  "Error: --help not found", "error: unknown option --help"
+    if "--help" in combined and len(combined.strip()) < 200:
+        # Short rejection message -- script works, just doesn't know --help
+        return ("ok", "no --help support (argparse not used)")
+
+    # 4. Usage-like output: script printed its own help/usage info and
+    #    exited non-zero (common with manual sys.argv parsers)
+    usage_patterns = [
+        r"(?i)^usage:",
+        r"(?i)^usage ",
+        r"(?i)\busage:",
+        r"(?i)positional argument",
+        r"(?i)required argument",
+        r"(?i)expected \d+ argument",
+        r"(?i)missing .* argument",
+        r"(?i)too (few|many) arguments",
+    ]
+    for pat in usage_patterns:
+        if re.search(pat, combined):
+            preview = combined.strip()[:120]
+            return ("warn", preview)
+
+    # 5. Very short output (< 200 chars) with non-zero exit and no real error
+    #    indicators -- likely a simple "bad argument" rejection
+    if len(combined.strip()) < 200 and rc in (1, 2):
+        preview = combined.strip()[:120] if combined.strip() else "exit code {}".format(rc)
+        return ("ok", "no --help support: " + preview)
+
+    # 6. Fallback: genuine unknown error
+    err_detail = stderr.strip().split("\n")[-1] if stderr.strip() else "exit code {}".format(rc)
+    return ("error", err_detail)
+
+
 def check_t4(skill_path: str) -> List[Dict[str, str]]:
     """Run T4 runtime checks. Returns list of {script, status, detail}."""
     results = []  # type: List[Dict[str, str]]
     scripts_dir = os.path.join(skill_path, "scripts")
     py_files = find_py_files(scripts_dir)
+    python_bin = get_python()
 
     if not py_files:
         results.append({"script": "(none)", "status": "skip", "detail": "no scripts found"})
@@ -617,11 +802,23 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
 
     for fpath in py_files:
         rel = os.path.relpath(fpath, skill_path)
+        basename = os.path.basename(fpath)
+
+        # Skip __init__.py files -- they are package markers, not scripts
+        if basename == "__init__.py":
+            results.append({"script": rel, "status": "skip", "detail": "package init file"})
+            continue
+
         try:
             with open(fpath, "r", encoding="utf-8", errors="replace") as f:
                 source = f.read()
         except Exception:
             results.append({"script": rel, "status": "skip", "detail": "cannot read file"})
+            continue
+
+        # Pre-scan: skip library modules with relative imports
+        if _is_library_module(source):
+            results.append({"script": rel, "status": "skip", "detail": "library module (relative imports)"})
             continue
 
         has_argparse = "argparse" in source
@@ -633,19 +830,28 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
 
         # Try running with --help
         rc, stdout, stderr = run_cmd(
-            [sys.executable, fpath, "--help"],
+            [python_bin, fpath, "--help"],
             timeout=RUNTIME_TIMEOUT,
         )
 
         if rc == 0:
-            # Truncate help text for detail
+            # Exit code 0 = script is runnable, regardless of output content
             help_preview = stdout.strip()[:120]
             results.append({"script": rel, "status": "ok", "detail": help_preview})
         elif "timeout" in stderr:
             results.append({"script": rel, "status": "error", "detail": "timed out after {}s".format(RUNTIME_TIMEOUT)})
+        elif _is_runtime_guard_error(stderr):
+            # Script intentionally refuses direct execution -- not an error
+            results.append({"script": rel, "status": "skip", "detail": "library module (runtime guard)"})
+        elif "ImportError: attempted relative import" in stderr:
+            # Catch relative import errors that weren't caught by pre-scan
+            results.append({"script": rel, "status": "skip", "detail": "library module (relative imports)"})
         else:
-            err_detail = stderr.strip().split("\n")[-1] if stderr else "exit code {}".format(rc)
-            results.append({"script": rel, "status": "error", "detail": err_detail[:200]})
+            # --- Analyse non-zero exit to distinguish real errors from
+            #     scripts that simply don't understand --help. ---
+            combined = (stdout + "\n" + stderr).strip()
+            status, detail = _analyse_help_failure(rc, stdout, stderr, combined)
+            results.append({"script": rel, "status": status, "detail": detail[:200]})
 
     return results
 

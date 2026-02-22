@@ -6,8 +6,8 @@ description: >-
   "skill 測試", "測試 skill", "跑一次 skill 驗證", "skill 健康檢查",
   mentions skill testing or validation, or discusses verifying that
   skills work correctly in the current environment.
-version: 0.1.0
-tools: Task, Read, Glob, Grep, Bash
+version: 0.2.0
+tools: Task, Read, Glob, Grep, Bash, sandbox_execute
 argument-hint: "skill name or 'all' (default: all)"
 ---
 
@@ -16,6 +16,10 @@ argument-hint: "skill name or 'all' (default: all)"
 Systematically test skills against the current environment. Detect broken dependencies,
 version incompatibilities, stale references, and structural issues. Produce a PASS /
 PARTIAL / FAIL report for each skill with actionable fix descriptions.
+
+## Agent Delegation
+
+Delegate test execution to `worker` agent.
 
 ## Test Categories
 
@@ -38,6 +42,23 @@ FAIL    = Any T1–T4 hard failure (missing dep, syntax error, broken ref)
 ## Workflow
 
 ### Step 0 — Enumerate Skills
+
+> **Sandbox acceleration**: T1–T4 automated checks (dependency, syntax, consistency, runtime) across all skills benefit from `sandbox_execute`.
+>
+> Preferred (Sandbox):
+> ```python
+> import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-tester/scripts')
+> import scan_env, gen_report
+> env_results = scan_env.run_all()
+> report = gen_report.aggregate(env_results)
+> output(report)
+> ```
+>
+> Fallback (Bash):
+> ```bash
+> python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
+> python3 ~/.claude/skills/skill-tester/scripts/gen_report.py --input results.json
+> ```
 
 ```bash
 python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
@@ -157,6 +178,15 @@ python3 scripts/gen_report.py --input results.json --format json
 | `/skill-tester pdf` | Test a single skill |
 | `/skill-tester --category T1` | Run only dependency checks |
 | Auto-fix | After report, offer to fix auto-fixable issues |
+
+## Sandbox Optimization
+
+This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execute`:
+
+- **Batch T1–T4 checks**: Import `scripts/scan_env.py` in sandbox to run dependency, syntax, consistency, and runtime checks across all skills in one call
+- **Report generation**: Import `scripts/gen_report.py` in sandbox to aggregate T1–T4 results and produce markdown or JSON report
+
+Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
 ## Continuous Improvement
 
