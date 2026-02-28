@@ -167,7 +167,7 @@ skill-curator (Audit) → skill-tester (Test) → skill-optimizer (Optimize) →
 
 Related skills:
 - **systematic-debugging** — Failed skill tests trigger systematic debugging
-- **test-driven-development** — Skill testing follows TDD principles
+- **tdd** — Skill testing follows TDD principles
 - **verification-before-completion** — Skill tests are part of completion verification
 
 When called from skill-lifecycle, output JSON to stdout for pipeline consumption:
