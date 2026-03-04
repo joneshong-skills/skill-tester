@@ -245,15 +245,17 @@ def generate_markdown(data: Dict[str, Any]) -> str:
             t = tests.get(tid)
             cols.append(fmt_status(t.get("status") if t else None))
         result = skill.get("result", "SKIP")
-        w("| {name} | {t1} | {t2} | {t3} | {t4} | {t5} | **{r}** |".format(
-            name=name,
-            t1=cols[0],
-            t2=cols[1],
-            t3=cols[2],
-            t4=cols[3],
-            t5=cols[4],
-            r=result,
-        ))
+        w(
+            "| {name} | {t1} | {t2} | {t3} | {t4} | {t5} | **{r}** |".format(
+                name=name,
+                t1=cols[0],
+                t2=cols[1],
+                t3=cols[2],
+                t4=cols[3],
+                t5=cols[4],
+                r=result,
+            )
+        )
     w("")
 
     # ----- Issues section -----
@@ -325,26 +327,30 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         description="Generate a test report from skill-tester scan results.",
     )
     parser.add_argument(
-        "--input", "-i",
+        "--input",
+        "-i",
         metavar="FILE",
         default=None,
         help="JSON results file from scan_env.py (default: stdin)",
     )
     parser.add_argument(
-        "--scenario", "-s",
+        "--scenario",
+        "-s",
         metavar="FILE",
         default=None,
         help="Optional JSON file with T5 scenario results to merge",
     )
     parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=("md", "json"),
         default="md",
         dest="fmt",
         help="Output format: md (markdown) or json (default: md)",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         metavar="FILE",
         default=None,
         help="Output file path (default: stdout)",
@@ -352,7 +358,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--save",
         action="store_true",
-        help="Auto-save to ~/Claude/skills/skill-tester/skill-test-report-{date}.{ext}",
+        help="Auto-save to ~/workshop/outputs/skill-tester/skill-test-report-{date}.{ext}",
     )
     return parser.parse_args(argv)
 
@@ -381,8 +387,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.save:
         ext = "md" if args.fmt == "md" else "json"
         today = data.get("meta", {}).get("date", date.today().isoformat())
-        _root = os.path.expanduser(os.environ.get("CLAUDE_OUTPUTS_DIR", "~/Claude/skills"))
-        save_path = os.path.join(_root, "skill-tester", "skill-test-report-{}.{}".format(today, ext))
+        _root = os.path.expanduser(
+            os.environ.get("CLAUDE_OUTPUTS_DIR", "~/workshop/outputs")
+        )
+        save_path = os.path.join(
+            _root, "skill-tester", "skill-test-report-{}.{}".format(today, ext)
+        )
         outputs.append(save_path)
 
     # Write to file(s) if specified

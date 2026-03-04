@@ -52,7 +52,7 @@ while [ $# -gt 0 ]; do
             echo "  --format md|json    Output format (default: md)"
             echo "  --output FILE       Write report to FILE instead of stdout"
             echo ""
-            echo "Default output path: ~/Claude/skills/skill-tester/{YYYY-MM-DD}-report.{ext}"
+            echo "Default output path: ~/workshop/outputs/skill-tester/{YYYY-MM-DD}-report.{ext}"
             exit 0
             ;;
         *)
@@ -349,7 +349,7 @@ if [ -n "$ARG_OUTPUT" ]; then
     FINAL_OUTPUT="$ARG_OUTPUT"
 else
     TODAY="$(python3 -c "from datetime import date; print(date.today().isoformat())")"
-    OUTPUT_ROOT="${CLAUDE_OUTPUTS_DIR:-${HOME}/Claude/skills}"
+    OUTPUT_ROOT="${CLAUDE_OUTPUTS_DIR:-${HOME}/workshop/outputs}"
     FINAL_OUTPUT="${OUTPUT_ROOT}/skill-tester/${TODAY}-report.${ARG_FORMAT}"
 fi
 
