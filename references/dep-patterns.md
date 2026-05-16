@@ -36,7 +36,7 @@ PIP_INSTALL = r'''
 | `pip install beautifulsoup4` | `beautifulsoup4` |
 | `pip3 install "requests[security]"` | `requests[security]` |
 | `pip install --user PyYAML>=6.0` | `PyYAML>=6.0` |
-| `python3 -m pip install rich` | `rich` |
+| `~/.local/bin/python3 -m pip install rich` | `rich` |
 | `pip install -U openai==1.30.0` | `openai==1.30.0` |
 
 ### Verification Command
@@ -154,7 +154,7 @@ PYTHON_IMPORT = r'''
 ### Verification Command
 
 ```bash
-python3 -c "import <module_name>"
+~/.local/bin/python3 -c "import <module_name>"
 ```
 
 ---

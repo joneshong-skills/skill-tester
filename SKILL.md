@@ -56,12 +56,12 @@ FAIL    = Any T1–T4 hard failure (missing dep, syntax error, broken ref)
 >
 > Fallback (Bash):
 > ```bash
-> python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
-> python3 ~/.claude/skills/skill-tester/scripts/gen_report.py --input results.json
+> ~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
+> ~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/gen_report.py --input results.json
 > ```
 
 ```bash
-python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
+~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/scan_env.py
 ```
 
 Produces a JSON list of all skills with paths and detected dependency types.
@@ -72,13 +72,13 @@ If the user specified a skill name, filter to that skill only.
 The script runs T1–T4 per skill automatically:
 
 **T1 Dependency** — Parse SKILL.md and scripts for:
-- `import X` / `from X import` → check `python3 -c "import X"`
+- `import X` / `from X import` → check `~/.local/bin/python3 -c "import X"`
 - `pip install X` in docs → check `pip3 show X`
 - `brew install X` / `which X` in docs → check `which X`
 - `npm install X` in docs → check `npm list -g X`
 
 **T2 Syntax** — For each `*.py` in `scripts/`:
-- `python3 -c "import ast; ast.parse(open('file.py').read())"`
+- `~/.local/bin/python3 -c "import ast; ast.parse(open('file.py').read())"`
 - Grep for Python 3.10+ patterns: `match `, `X | Y` type hints (outside strings)
 
 **T3 Consistency** —
@@ -114,7 +114,7 @@ Wait for a batch to complete before starting the next.
 ### Step 3 — Aggregate & Report
 
 ```bash
-python3 ~/.claude/skills/skill-tester/scripts/gen_report.py --input results.json
+~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/gen_report.py --input results.json
 ```
 
 Combine automated (T1–T4) and scenario (T5) results into a final report:
@@ -172,7 +172,7 @@ Related skills:
 
 When called from skill-lifecycle, output JSON to stdout for pipeline consumption:
 ```bash
-python3 scripts/gen_report.py --input results.json --format json
+~/.local/bin/python3 scripts/gen_report.py --input results.json --format json
 ```
 
 ## Quick Reference
@@ -192,8 +192,8 @@ This skill is **sandbox-optimized**. Batch operations run inside `sandbox_execut
 - **Report generation**: Import `scripts/gen_report.py` in sandbox to aggregate T1–T4 results and produce markdown or JSON report
 
 Fallback (Bash):
-- `python3 ~/.claude/skills/skill-tester/scripts/scan_env.py` — run checks via Bash when sandbox is unavailable
-- `python3 ~/.claude/skills/skill-tester/scripts/gen_report.py` — generate report via Bash
+- `~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/scan_env.py` — run checks via Bash when sandbox is unavailable
+- `~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/gen_report.py` — generate report via Bash
 
 Principle: **Deterministic batch work → sandbox; reasoning/presentation → LLM.**
 
@@ -225,3 +225,77 @@ Accumulated lessons signal when to run `/skill-optimizer` for a deeper structura
 ### Scripts
 - **`scripts/scan_env.py`** — Automated T1–T4 checks, outputs JSON results
 - **`scripts/gen_report.py`** — Aggregates results into markdown or JSON report
+- **`scripts/run_routing_evals.py`** — Routing 量化評估，跑 confusion matrix + precision/recall/F1
+
+## Routing Evals Framework
+
+蠶食自 yao-meta-skill `evals/` 結構，量化驗證 skill 的 description 是否能精準路由（防 false-positive 和 overfit）。
+
+### 何時用 Routing Evals
+
+- description 修改後想確認沒搶到其他 skill 的觸發
+- 新 skill 上線前驗證 description 寫得夠精準
+- 觀察到實際使用有 false-positive，要量化重現
+
+不必每次都跑（耗 LLM token）；只在「description 有改」或「routing 出錯」時跑。
+
+### 目錄結構
+
+```
+~/.claude/skills/skill-tester/evals/
+├── README.md
+├── promotion_policy.md          # baseline → improved 升級條件
+├── _template/                   # 給每個 skill 套用的模板
+├── runs/                        # 每次跑出的 JSON 結果（時間戳記）
+└── <skill-slug>/                # 每個被 eval 的 skill
+    ├── baseline_description.txt  # 基準（current SKILL.md description）
+    ├── improved_description.txt  # 改進版（A/B 中的 B）
+    ├── trigger_cases.json        # positive + negative + adversarial
+    ├── blind_holdout.json        # 不在 description 中見過的 phrasing（防 overfit）
+    ├── adversarial.json          # 邊界 case（相似關鍵字但不該命中）
+    ├── semantic_config.json      # stub fallback 用關鍵字
+    └── packaging_expectations.json
+```
+
+### 為新 skill 建 eval 套件
+
+```bash
+SLUG=<your-skill>
+cp -r ~/.claude/skills/skill-tester/evals/_template ~/.claude/skills/skill-tester/evals/$SLUG
+# 編輯 7 個檔案，最少實填：baseline + trigger_cases (5 pos / 3 neg / 3 adv) + blind_holdout (3-5) + adversarial (3-5)
+```
+
+### 跑 evals
+
+```bash
+# Baseline
+~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/run_routing_evals.py --skill $SLUG
+
+# A/B improved description
+~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/run_routing_evals.py --skill $SLUG --description improved
+
+# 強制 stub mode（無 LLM 也能跑，只看 semantic_config 關鍵字）
+~/.local/bin/python3 ~/.claude/skills/skill-tester/scripts/run_routing_evals.py --skill $SLUG --stub
+```
+
+### LLM 模式
+
+預設 LiteLLM proxy 呼叫真實 LLM（`gpt-4o-mini`）模擬 routing 判斷。LiteLLM 不可用時 fallback stub keyword 匹配（標 `mode: stub`）。stub 結果僅供結構驗證，**不能作為升級依據**。
+
+### Confusion Matrix
+
+```
+Precision = TP / (TP + FP)        命中時的精準度
+Recall    = TP / (TP + FN)        應命中時的捕獲率
+F1        = 2·P·R / (P+R)         綜合分數
+adv-FP-rate = adversarial 集中誤觸率
+```
+
+### 升級條件（promotion_policy.md）
+
+1. blind_holdout recall ≥ +5%
+2. adversarial FP-rate ≤ 10%
+3. trigger_cases F1 不退步
+4. 人工 review 通過 → 替換 SKILL.md frontmatter
+
+詳見 `evals/promotion_policy.md` 與 `evals/README.md`。

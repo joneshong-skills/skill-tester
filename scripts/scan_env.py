@@ -28,7 +28,7 @@ import platform
 import re
 import subprocess
 import sys
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Pip package name -> Python import name mapping
@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Tuple
 # ---------------------------------------------------------------------------
 # npm package name -> binary name mapping (for brew-installed CLIs)
 # ---------------------------------------------------------------------------
-NPM_TO_BINARY: Dict[str, str] = {
+NPM_TO_BINARY: dict[str, str] = {
     "@openai/codex": "codex",
     "@google/gemini-cli": "gemini",
 }
@@ -44,7 +44,7 @@ NPM_TO_BINARY: Dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Pip package name -> Python import name mapping
 # ---------------------------------------------------------------------------
-PIP_TO_IMPORT: Dict[str, str] = {
+PIP_TO_IMPORT: dict[str, str] = {
     "python-pptx": "pptx",
     "Pillow": "PIL",
     "pikepdf": "pikepdf",
@@ -72,29 +72,132 @@ PIP_TO_IMPORT: Dict[str, str] = {
 
 # Standard library modules (partial list) -- skip these in T1
 STDLIB_MODULES = {
-    "abc", "argparse", "ast", "asyncio", "base64", "bisect", "calendar",
-    "cmath", "codecs", "collections", "colorsys", "concurrent", "configparser",
-    "contextlib", "copy", "csv", "ctypes", "dataclasses", "datetime", "decimal",
-    "difflib", "email", "enum", "errno", "fcntl", "fileinput", "fnmatch",
-    "fractions", "ftplib", "functools", "getpass", "gettext", "glob",
-    "gzip", "hashlib", "heapq", "hmac", "html", "http", "imaplib",
-    "importlib", "inspect", "io", "itertools", "json", "keyword", "linecache",
-    "locale", "logging", "lzma", "math", "mimetypes", "multiprocessing",
-    "operator", "optparse", "os", "pathlib", "pickle", "platform", "plistlib",
-    "pprint", "profile", "pstats", "queue", "random", "re", "readline",
-    "reprlib", "resource", "sched", "secrets", "select", "shelve", "shlex",
-    "shutil", "signal", "site", "smtplib", "socket", "socketserver", "sqlite3",
-    "ssl", "stat", "statistics", "string", "struct", "subprocess", "sys",
-    "sysconfig", "syslog", "tarfile", "tempfile", "termios", "textwrap",
-    "threading", "time", "timeit", "tkinter", "token", "tokenize",
-    "traceback", "tracemalloc", "tty", "turtle", "types", "typing",
-    "unicodedata", "unittest", "urllib", "uuid", "venv", "warnings",
-    "wave", "weakref", "webbrowser", "xml", "xmlrpc", "zipfile", "zipimport",
-    "zlib", "_thread", "__future__",
+    "abc",
+    "argparse",
+    "ast",
+    "asyncio",
+    "base64",
+    "bisect",
+    "calendar",
+    "cmath",
+    "codecs",
+    "collections",
+    "colorsys",
+    "concurrent",
+    "configparser",
+    "contextlib",
+    "copy",
+    "csv",
+    "ctypes",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "difflib",
+    "email",
+    "enum",
+    "errno",
+    "fcntl",
+    "fileinput",
+    "fnmatch",
+    "fractions",
+    "ftplib",
+    "functools",
+    "getpass",
+    "gettext",
+    "glob",
+    "gzip",
+    "hashlib",
+    "heapq",
+    "hmac",
+    "html",
+    "http",
+    "imaplib",
+    "importlib",
+    "inspect",
+    "io",
+    "itertools",
+    "json",
+    "keyword",
+    "linecache",
+    "locale",
+    "logging",
+    "lzma",
+    "math",
+    "mimetypes",
+    "multiprocessing",
+    "operator",
+    "optparse",
+    "os",
+    "pathlib",
+    "pickle",
+    "platform",
+    "plistlib",
+    "pprint",
+    "profile",
+    "pstats",
+    "queue",
+    "random",
+    "re",
+    "readline",
+    "reprlib",
+    "resource",
+    "sched",
+    "secrets",
+    "select",
+    "shelve",
+    "shlex",
+    "shutil",
+    "signal",
+    "site",
+    "smtplib",
+    "socket",
+    "socketserver",
+    "sqlite3",
+    "ssl",
+    "stat",
+    "statistics",
+    "string",
+    "struct",
+    "subprocess",
+    "sys",
+    "sysconfig",
+    "syslog",
+    "tarfile",
+    "tempfile",
+    "termios",
+    "textwrap",
+    "threading",
+    "time",
+    "timeit",
+    "tkinter",
+    "token",
+    "tokenize",
+    "traceback",
+    "tracemalloc",
+    "tty",
+    "turtle",
+    "types",
+    "typing",
+    "unicodedata",
+    "unittest",
+    "urllib",
+    "uuid",
+    "venv",
+    "warnings",
+    "wave",
+    "weakref",
+    "webbrowser",
+    "xml",
+    "xmlrpc",
+    "zipfile",
+    "zipimport",
+    "zlib",
+    "_thread",
+    "__future__",
 }
 
 SUBPROCESS_TIMEOUT = 15  # seconds for most subprocess calls
-RUNTIME_TIMEOUT = 10     # seconds for T4 --help
+RUNTIME_TIMEOUT = 10  # seconds for T4 --help
 
 # Regex patterns for detecting relative imports (library modules)
 _RELATIVE_IMPORT_RE = re.compile(r"^\s*from\s+\.+\s*import\s", re.MULTILINE)
@@ -104,6 +207,7 @@ _RELATIVE_FROM_RE = re.compile(r"^\s*from\s+\.+\w+\s+import\s", re.MULTILINE)
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _find_python() -> str:
     """Find the best python3 binary, preferring uv-managed."""
@@ -139,7 +243,7 @@ def get_python() -> str:
     return _PYTHON_BIN
 
 
-def run_cmd(cmd: List[str], timeout: int = SUBPROCESS_TIMEOUT) -> Tuple[int, str, str]:
+def run_cmd(cmd: list[str], timeout: int = SUBPROCESS_TIMEOUT) -> tuple[int, str, str]:
     """Run a command, return (returncode, stdout, stderr). Never raises."""
     try:
         proc = subprocess.run(
@@ -158,7 +262,7 @@ def run_cmd(cmd: List[str], timeout: int = SUBPROCESS_TIMEOUT) -> Tuple[int, str
         return -1, "", str(exc)
 
 
-def parse_yaml_frontmatter(text: str) -> Dict[str, Any]:
+def parse_yaml_frontmatter(text: str) -> dict[str, Any]:
     """
     Minimal YAML frontmatter parser (no PyYAML dependency).
     Handles simple key: value pairs and key: "quoted value".
@@ -179,7 +283,7 @@ def parse_yaml_frontmatter(text: str) -> Dict[str, Any]:
         if colon_idx == -1:
             continue
         key = line[:colon_idx].strip()
-        val = line[colon_idx + 1:].strip()
+        val = line[colon_idx + 1 :].strip()
         # Strip surrounding quotes
         if len(val) >= 2 and val[0] in ('"', "'") and val[-1] == val[0]:
             val = val[1:-1]
@@ -187,7 +291,7 @@ def parse_yaml_frontmatter(text: str) -> Dict[str, Any]:
     return result
 
 
-def find_py_files(directory: str) -> List[str]:
+def find_py_files(directory: str) -> list[str]:
     """Recursively find all .py files under *directory*."""
     results = []  # type: List[str]
     try:
@@ -225,6 +329,7 @@ def import_name_for_pip(pkg: str) -> str:
 # T1 - Dependency Check
 # ---------------------------------------------------------------------------
 
+
 def _is_valid_package_name(name: str) -> bool:
     """Check if a string looks like a real package name (not a placeholder)."""
     # Must be at least 2 chars
@@ -237,12 +342,51 @@ def _is_valid_package_name(name: str) -> bool:
         return False
     # Must not be a common placeholder or English word used in docs
     placeholders = {
-        "x", "y", "z", "X", "Y", "Z", "package", "pkg", "module",
-        "name", "your", "the", "a", "an", "in", "of", "to", "for",
-        "and", "or", "not", "is", "it", "if", "on", "at", "by",
-        "from", "with", "as", "this", "that", "then", "each",
-        "list", "show", "check", "docs", "install", "run",
-        "example", "test", "all", "any", "some",
+        "x",
+        "y",
+        "z",
+        "X",
+        "Y",
+        "Z",
+        "package",
+        "pkg",
+        "module",
+        "name",
+        "your",
+        "the",
+        "a",
+        "an",
+        "in",
+        "of",
+        "to",
+        "for",
+        "and",
+        "or",
+        "not",
+        "is",
+        "it",
+        "if",
+        "on",
+        "at",
+        "by",
+        "from",
+        "with",
+        "as",
+        "this",
+        "that",
+        "then",
+        "each",
+        "list",
+        "show",
+        "check",
+        "docs",
+        "install",
+        "run",
+        "example",
+        "test",
+        "all",
+        "any",
+        "some",
     }
     if name.lower() in placeholders:
         return False
@@ -258,7 +402,7 @@ def _is_valid_package_name(name: str) -> bool:
     return True
 
 
-def _extract_code_block_lines(content: str) -> List[str]:
+def _extract_code_block_lines(content: str) -> list[str]:
     """
     Extract lines from fenced code blocks (```...```) that contain
     install commands. Also include bare lines that look like shell commands.
@@ -280,7 +424,7 @@ def _extract_code_block_lines(content: str) -> List[str]:
     return lines
 
 
-def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
+def extract_deps_from_skillmd(skill_md_path: str) -> dict[str, list[str]]:
     """
     Parse SKILL.md for pip/brew/npm install commands.
     Only searches inside fenced code blocks and inline code spans.
@@ -288,7 +432,7 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
     """
     deps = {"pip": [], "brew": [], "npm": []}  # type: Dict[str, List[str]]
     try:
-        with open(skill_md_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(skill_md_path, encoding="utf-8", errors="replace") as f:
             content = f.read()
     except Exception:
         return deps
@@ -331,7 +475,11 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
             if token.startswith("-"):
                 continue
             # Remove @version
-            pkg = token.split("@")[0].strip() if "@" in token and not token.startswith("@") else token.strip()
+            pkg = (
+                token.split("@")[0].strip()
+                if "@" in token and not token.startswith("@")
+                else token.strip()
+            )
             if pkg and _is_valid_package_name(pkg):
                 deps["npm"].append(pkg)
 
@@ -348,7 +496,7 @@ def extract_deps_from_skillmd(skill_md_path: str) -> Dict[str, List[str]]:
     return deps
 
 
-def extract_imports_from_py(py_files: List[str]) -> List[str]:
+def extract_imports_from_py(py_files: list[str]) -> list[str]:
     """
     Parse *.py files for import statements. Return top-level module names
     (e.g., 'from PIL.Image import open' -> 'PIL').
@@ -356,7 +504,7 @@ def extract_imports_from_py(py_files: List[str]) -> List[str]:
     modules = set()  # type: set
     for fpath in py_files:
         try:
-            with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+            with open(fpath, encoding="utf-8", errors="replace") as f:
                 source = f.read()
         except Exception:
             continue
@@ -376,7 +524,7 @@ def extract_imports_from_py(py_files: List[str]) -> List[str]:
     return sorted(modules)
 
 
-def check_t1(skill_path: str) -> List[Dict[str, str]]:
+def check_t1(skill_path: str) -> list[dict[str, str]]:
     """Run T1 dependency checks. Returns list of {name, type, status, detail}."""
     results = []  # type: List[Dict[str, str]]
     skill_md = os.path.join(skill_path, "SKILL.md")
@@ -446,19 +594,21 @@ def check_t1(skill_path: str) -> List[Dict[str, str]]:
             timeout=SUBPROCESS_TIMEOUT,
         )
         if rc != 0:
-            results.append({
-                "name": mod,
-                "type": "pip(inferred)",
-                "status": "missing",
-                "detail": "found in scripts but not importable",
-            })
+            results.append(
+                {
+                    "name": mod,
+                    "type": "pip(inferred)",
+                    "status": "warn",
+                    "detail": "found in scripts but not importable (may be dynamic/conditional import — verify manually if needed)",
+                }
+            )
 
     # 5) Check brew deps
     for pkg in deps["brew"]:
-        rc, _, _ = run_cmd(["which", pkg], timeout=SUBPROCESS_TIMEOUT)
+        rc, _, _ = run_cmd(["/usr/bin/which", pkg], timeout=SUBPROCESS_TIMEOUT)
         if rc != 0:
             # Fallback: data-only packages (e.g. tesseract-lang) have no binary
-            rc, _, _ = run_cmd(["brew", "list", pkg], timeout=SUBPROCESS_TIMEOUT)
+            rc, _, _ = run_cmd(["/opt/homebrew/bin/brew", "list", pkg], timeout=SUBPROCESS_TIMEOUT)
         status = "ok" if rc == 0 else "missing"
         results.append({"name": pkg, "type": "brew", "status": status, "detail": ""})
 
@@ -499,31 +649,36 @@ PY310_PATTERNS = [
     # match/case statement: "match " at start of line (with possible indentation)
     (re.compile(r"^\s*match\s+\S", re.MULTILINE), "match/case statement (3.10+)"),
     # Lowercase generic type hints: list[, dict[, set[, tuple[, type[
-    (re.compile(r":\s*(?:list|dict|set|tuple|frozenset|type)\["), "lowercase generic type hint (3.9 __future__ or 3.10+)"),
+    (
+        re.compile(r":\s*(?:list|dict|set|tuple|frozenset|type)\["),
+        "lowercase generic type hint (3.9 __future__ or 3.10+)",
+    ),
     # Union with pipe: str | None, int | str (but NOT bitwise or in expressions)
     (re.compile(r":\s*\w+\s*\|\s*\w+"), "PEP 604 union type hint X | Y (3.10+)"),
     (re.compile(r"->\s*\w+\s*\|\s*\w+"), "PEP 604 union type hint X | Y (3.10+)"),
 ]
 
 
-def check_t2(skill_path: str) -> List[Dict[str, str]]:
+def check_t2(skill_path: str) -> list[dict[str, str]]:
     """Run T2 syntax checks. Returns list of {file, status, detail}."""
     results = []  # type: List[Dict[str, str]]
     scripts_dir = os.path.join(skill_path, "scripts")
     py_files = find_py_files(scripts_dir)
 
     if not py_files:
-        results.append({
-            "file": scripts_dir,
-            "status": "skip",
-            "detail": "no .py files found in scripts/",
-        })
+        results.append(
+            {
+                "file": scripts_dir,
+                "status": "skip",
+                "detail": "no .py files found in scripts/",
+            }
+        )
         return results
 
     for fpath in py_files:
         rel = os.path.relpath(fpath, skill_path)
         try:
-            with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+            with open(fpath, encoding="utf-8", errors="replace") as f:
                 source = f.read()
         except Exception as exc:
             results.append({"file": rel, "status": "error", "detail": "read error: " + str(exc)})
@@ -534,11 +689,13 @@ def check_t2(skill_path: str) -> List[Dict[str, str]]:
             ast.parse(source, filename=fpath)
             parse_ok = True
         except SyntaxError as exc:
-            results.append({
-                "file": rel,
-                "status": "error",
-                "detail": "SyntaxError: {} (line {})".format(exc.msg, exc.lineno),
-            })
+            results.append(
+                {
+                    "file": rel,
+                    "status": "error",
+                    "detail": f"SyntaxError: {exc.msg} (line {exc.lineno})",
+                }
+            )
             parse_ok = False
 
         # 3.10+ pattern detection
@@ -552,11 +709,13 @@ def check_t2(skill_path: str) -> List[Dict[str, str]]:
         if parse_ok and not warnings:
             results.append({"file": rel, "status": "ok", "detail": ""})
         elif parse_ok and warnings:
-            results.append({
-                "file": rel,
-                "status": "warn",
-                "detail": "possible 3.10+ syntax: " + "; ".join(warnings),
-            })
+            results.append(
+                {
+                    "file": rel,
+                    "status": "warn",
+                    "detail": "possible 3.10+ syntax: " + "; ".join(warnings),
+                }
+            )
         # If not parse_ok, we already appended the error above
 
     return results
@@ -582,17 +741,20 @@ def _strip_strings_and_comments(source: str) -> str:
 # T3 - Consistency Check
 # ---------------------------------------------------------------------------
 
-def check_t3(skill_path: str) -> List[Dict[str, str]]:
+
+def check_t3(skill_path: str) -> list[dict[str, str]]:
     """Run T3 consistency checks. Returns list of {check, status, detail}."""
     results = []  # type: List[Dict[str, str]]
     skill_md_path = os.path.join(skill_path, "SKILL.md")
 
     # Read SKILL.md
     try:
-        with open(skill_md_path, "r", encoding="utf-8", errors="replace") as f:
+        with open(skill_md_path, encoding="utf-8", errors="replace") as f:
             content = f.read()
     except FileNotFoundError:
-        results.append({"check": "SKILL.md exists", "status": "fail", "detail": "SKILL.md not found"})
+        results.append(
+            {"check": "SKILL.md exists", "status": "fail", "detail": "SKILL.md not found"}
+        )
         return results
     except Exception as exc:
         results.append({"check": "SKILL.md readable", "status": "fail", "detail": str(exc)})
@@ -604,53 +766,59 @@ def check_t3(skill_path: str) -> List[Dict[str, str]]:
     # Check name
     name = fm.get("name", "")
     if not name or name.upper() == "TODO":
-        results.append({
-            "check": "frontmatter.name",
-            "status": "fail",
-            "detail": "name is missing or TODO",
-        })
+        results.append(
+            {
+                "check": "frontmatter.name",
+                "status": "fail",
+                "detail": "name is missing or TODO",
+            }
+        )
     else:
         results.append({"check": "frontmatter.name", "status": "ok", "detail": name})
 
     # Check description
     desc = fm.get("description", "")
     if not desc or desc.upper() == "TODO":
-        results.append({
-            "check": "frontmatter.description",
-            "status": "fail",
-            "detail": "description is missing or TODO",
-        })
+        results.append(
+            {
+                "check": "frontmatter.description",
+                "status": "fail",
+                "detail": "description is missing or TODO",
+            }
+        )
     else:
         # Check for at least one quoted phrase
         has_quote = bool(re.search(r'["\u201c\u201d]', desc))
         if has_quote:
-            results.append({
-                "check": "frontmatter.description",
-                "status": "ok",
-                "detail": desc[:80] + ("..." if len(desc) > 80 else ""),
-            })
+            results.append(
+                {
+                    "check": "frontmatter.description",
+                    "status": "ok",
+                    "detail": desc[:80] + ("..." if len(desc) > 80 else ""),
+                }
+            )
         else:
-            results.append({
-                "check": "frontmatter.description",
-                "status": "warn",
-                "detail": "description has no quoted trigger phrase",
-            })
+            results.append(
+                {
+                    "check": "frontmatter.description",
+                    "status": "warn",
+                    "detail": "description has no quoted trigger phrase",
+                }
+            )
 
     # Extract body (after frontmatter)
     body = content
     if content.startswith("---"):
         end = content.find("\n---", 3)
         if end != -1:
-            body = content[end + 4:]
+            body = content[end + 4 :]
 
     # Strip fenced code blocks from body to avoid false positives
     body_no_codeblocks = re.sub(r"```[\s\S]*?```", "", body)
 
     # Find file references in body (outside code blocks)
     # Pattern: scripts/foo.py, references/bar.md, assets/img.png, templates/x.html
-    file_ref_pattern = re.compile(
-        r"(?:scripts|references|assets|templates)/[\w][\w./-]*[\w.]"
-    )
+    file_ref_pattern = re.compile(r"(?:scripts|references|assets|templates)/[\w][\w./-]*[\w.]")
     refs_found = set()  # type: set
     for m in file_ref_pattern.finditer(body_no_codeblocks):
         ref = m.group(0)
@@ -665,29 +833,35 @@ def check_t3(skill_path: str) -> List[Dict[str, str]]:
         if os.path.exists(full_path):
             results.append({"check": "file_ref:" + ref, "status": "ok", "detail": "exists"})
         else:
-            results.append({
-                "check": "file_ref:" + ref,
-                "status": "fail",
-                "detail": "referenced in SKILL.md but not found on disk",
-            })
+            results.append(
+                {
+                    "check": "file_ref:" + ref,
+                    "status": "warn",
+                    "detail": "referenced in SKILL.md but not found on disk (may be planned, runtime artifact, or external path)",
+                }
+            )
 
     # Check for README.zh-TW.md (should be README.zh.md)
     bad_readme = os.path.join(skill_path, "README.zh-TW.md")
     good_readme = os.path.join(skill_path, "README.zh.md")
     if os.path.exists(bad_readme):
-        results.append({
-            "check": "readme_naming",
-            "status": "warn",
-            "detail": "README.zh-TW.md found; convention is README.zh.md",
-        })
+        results.append(
+            {
+                "check": "readme_naming",
+                "status": "warn",
+                "detail": "README.zh-TW.md found; convention is README.zh.md",
+            }
+        )
     elif os.path.exists(good_readme):
         results.append({"check": "readme_naming", "status": "ok", "detail": "README.zh.md exists"})
     else:
-        results.append({
-            "check": "readme_naming",
-            "status": "warn",
-            "detail": "no Chinese README found",
-        })
+        results.append(
+            {
+                "check": "readme_naming",
+                "status": "warn",
+                "detail": "no Chinese README found",
+            }
+        )
 
     return results
 
@@ -695,6 +869,7 @@ def check_t3(skill_path: str) -> List[Dict[str, str]]:
 # ---------------------------------------------------------------------------
 # T4 - Runtime Check
 # ---------------------------------------------------------------------------
+
 
 def _is_library_module(source: str) -> bool:
     """Check if source contains relative imports (library module, not standalone)."""
@@ -734,9 +909,7 @@ def _is_real_runtime_error(text: str) -> bool:
     return any(p in text for p in real_error_patterns)
 
 
-def _analyse_help_failure(
-    rc: int, stdout: str, stderr: str, combined: str
-) -> Tuple[str, str]:
+def _analyse_help_failure(rc: int, stdout: str, stderr: str, combined: str) -> tuple[str, str]:
     """Classify a non-zero exit from ``python script.py --help``.
 
     T4's purpose is to verify a script is *runnable* (no import errors,
@@ -747,7 +920,7 @@ def _analyse_help_failure(
     """
     # 1. Real runtime errors -> always "error"
     if _is_real_runtime_error(combined):
-        err_line = stderr.strip().split("\n")[-1] if stderr.strip() else "exit code {}".format(rc)
+        err_line = stderr.strip().split("\n")[-1] if stderr.strip() else f"exit code {rc}"
         return ("error", err_line)
 
     # 2. Script treated --help as a filename -> FileNotFoundError on "--help"
@@ -781,15 +954,15 @@ def _analyse_help_failure(
     # 5. Very short output (< 200 chars) with non-zero exit and no real error
     #    indicators -- likely a simple "bad argument" rejection
     if len(combined.strip()) < 200 and rc in (1, 2):
-        preview = combined.strip()[:120] if combined.strip() else "exit code {}".format(rc)
+        preview = combined.strip()[:120] if combined.strip() else f"exit code {rc}"
         return ("ok", "no --help support: " + preview)
 
     # 6. Fallback: genuine unknown error
-    err_detail = stderr.strip().split("\n")[-1] if stderr.strip() else "exit code {}".format(rc)
+    err_detail = stderr.strip().split("\n")[-1] if stderr.strip() else f"exit code {rc}"
     return ("error", err_detail)
 
 
-def check_t4(skill_path: str) -> List[Dict[str, str]]:
+def check_t4(skill_path: str) -> list[dict[str, str]]:
     """Run T4 runtime checks. Returns list of {script, status, detail}."""
     results = []  # type: List[Dict[str, str]]
     scripts_dir = os.path.join(skill_path, "scripts")
@@ -810,7 +983,7 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
             continue
 
         try:
-            with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+            with open(fpath, encoding="utf-8", errors="replace") as f:
                 source = f.read()
         except Exception:
             results.append({"script": rel, "status": "skip", "detail": "cannot read file"})
@@ -818,11 +991,13 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
 
         # Pre-scan: skip library modules with relative imports
         if _is_library_module(source):
-            results.append({"script": rel, "status": "skip", "detail": "library module (relative imports)"})
+            results.append(
+                {"script": rel, "status": "skip", "detail": "library module (relative imports)"}
+            )
             continue
 
         has_argparse = "argparse" in source
-        has_main = ('if __name__' in source) or ("__name__" in source and "__main__" in source)
+        has_main = ("if __name__" in source) or ("__name__" in source and "__main__" in source)
 
         if not (has_argparse or has_main):
             results.append({"script": rel, "status": "skip", "detail": "no argparse or __main__"})
@@ -839,13 +1014,19 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
             help_preview = stdout.strip()[:120]
             results.append({"script": rel, "status": "ok", "detail": help_preview})
         elif "timeout" in stderr:
-            results.append({"script": rel, "status": "error", "detail": "timed out after {}s".format(RUNTIME_TIMEOUT)})
+            results.append(
+                {"script": rel, "status": "error", "detail": f"timed out after {RUNTIME_TIMEOUT}s"}
+            )
         elif _is_runtime_guard_error(stderr):
             # Script intentionally refuses direct execution -- not an error
-            results.append({"script": rel, "status": "skip", "detail": "library module (runtime guard)"})
+            results.append(
+                {"script": rel, "status": "skip", "detail": "library module (runtime guard)"}
+            )
         elif "ImportError: attempted relative import" in stderr:
             # Catch relative import errors that weren't caught by pre-scan
-            results.append({"script": rel, "status": "skip", "detail": "library module (relative imports)"})
+            results.append(
+                {"script": rel, "status": "skip", "detail": "library module (relative imports)"}
+            )
         else:
             # --- Analyse non-zero exit to distinguish real errors from
             #     scripts that simply don't understand --help. ---
@@ -860,12 +1041,13 @@ def check_t4(skill_path: str) -> List[Dict[str, str]]:
 # Orchestration
 # ---------------------------------------------------------------------------
 
+
 def determine_result(
-    t1: List[Dict[str, str]],
-    t2: List[Dict[str, str]],
-    t3: List[Dict[str, str]],
-    t4: List[Dict[str, str]],
-    categories: List[str],
+    t1: list[dict[str, str]],
+    t2: list[dict[str, str]],
+    t3: list[dict[str, str]],
+    t4: list[dict[str, str]],
+    categories: list[str],
 ) -> str:
     """Determine overall PASS / PARTIAL / FAIL from check results."""
     has_fail = False
@@ -896,7 +1078,7 @@ def determine_result(
         return "PASS"
 
 
-def scan_skill(skill_path: str, categories: List[str]) -> Dict[str, Any]:
+def scan_skill(skill_path: str, categories: list[str]) -> dict[str, Any]:
     """Scan a single skill and return its results dict."""
     entry = {"path": skill_path}  # type: Dict[str, Any]
 
@@ -904,7 +1086,9 @@ def scan_skill(skill_path: str, categories: List[str]) -> Dict[str, Any]:
         try:
             entry["t1_dependency"] = check_t1(skill_path)
         except Exception as exc:
-            entry["t1_dependency"] = [{"name": "(error)", "type": "internal", "status": "error", "detail": str(exc)}]
+            entry["t1_dependency"] = [
+                {"name": "(error)", "type": "internal", "status": "error", "detail": str(exc)}
+            ]
 
     if "T2" in categories:
         try:
@@ -934,7 +1118,7 @@ def scan_skill(skill_path: str, categories: List[str]) -> Dict[str, Any]:
     return entry
 
 
-def discover_skills(skills_dir: str) -> List[Tuple[str, str]]:
+def discover_skills(skills_dir: str) -> list[tuple[str, str]]:
     """
     Return list of (skill_name, skill_path) for directories containing SKILL.md.
     """
@@ -985,7 +1169,7 @@ def main() -> None:
         valid = {"T1", "T2", "T3", "T4"}
         for c in categories:
             if c not in valid:
-                print("Error: unknown category '{}'. Valid: T1,T2,T3,T4".format(c), file=sys.stderr)
+                print(f"Error: unknown category '{c}'. Valid: T1,T2,T3,T4", file=sys.stderr)
                 sys.exit(1)
     else:
         categories = ["T1", "T2", "T3", "T4"]
@@ -995,13 +1179,13 @@ def main() -> None:
     if args.skill:
         skill_path = os.path.join(skills_dir, args.skill)
         if not os.path.isdir(skill_path):
-            print("Error: skill directory not found: {}".format(skill_path), file=sys.stderr)
+            print(f"Error: skill directory not found: {skill_path}", file=sys.stderr)
             sys.exit(1)
         skill_list = [(args.skill, skill_path)]
     else:
         skill_list = discover_skills(skills_dir)
         if not skill_list:
-            print("Error: no skills found in {}".format(skills_dir), file=sys.stderr)
+            print(f"Error: no skills found in {skills_dir}", file=sys.stderr)
             sys.exit(1)
 
     # Build output
@@ -1014,7 +1198,7 @@ def main() -> None:
     }  # type: Dict[str, Any]
 
     for name, path in skill_list:
-        print("Scanning: {} ...".format(name), file=sys.stderr)
+        print(f"Scanning: {name} ...", file=sys.stderr)
         output["skills"][name] = scan_skill(path, categories)
 
     # Summary to stderr
@@ -1023,9 +1207,7 @@ def main() -> None:
     partial = sum(1 for v in output["skills"].values() if v.get("result") == "PARTIAL")
     failed = sum(1 for v in output["skills"].values() if v.get("result") == "FAIL")
     print(
-        "\nDone. {} skills scanned: {} PASS, {} PARTIAL, {} FAIL".format(
-            total, passed, partial, failed
-        ),
+        f"\nDone. {total} skills scanned: {passed} PASS, {partial} PARTIAL, {failed} FAIL",
         file=sys.stderr,
     )
 
@@ -1035,9 +1217,9 @@ def main() -> None:
         try:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(json_str + "\n")
-            print("Results written to: {}".format(args.output), file=sys.stderr)
+            print(f"Results written to: {args.output}", file=sys.stderr)
         except Exception as exc:
-            print("Error writing output file: {}".format(exc), file=sys.stderr)
+            print(f"Error writing output file: {exc}", file=sys.stderr)
             print(json_str)
     else:
         print(json_str)
