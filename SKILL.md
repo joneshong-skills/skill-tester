@@ -47,7 +47,7 @@ FAIL    = Any T1–T4 hard failure (missing dep, syntax error, broken ref)
 >
 > Preferred (Sandbox):
 > ```python
-> import sys; sys.path.insert(0, '/Users/joneshong/.claude/skills/skill-tester/scripts')
+> import sys, os; sys.path.insert(0, os.path.expanduser('~/.claude/skills/skill-tester/scripts'))
 > import scan_env, gen_report
 > env_results = scan_env.run_all()
 > report = gen_report.aggregate(env_results)
