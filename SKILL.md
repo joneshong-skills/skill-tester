@@ -1,14 +1,10 @@
 ---
 name: skill-tester
-description: >-
-  This skill should be used when the user asks to "test all skills",
-  "run skill tests", "validate my skills", "check skill health",
-  "skill 測試", "測試 skill", "跑一次 skill 驗證", "skill 健康檢查",
-  mentions skill testing or validation, or discusses verifying that
-  skills work correctly in the current environment.
+description: "tester, skills, test, run, tests, validate, check, skill 測試, 測試 skill, 跑一次 skill 驗證, skill 健康檢查"
 version: 0.2.0
 tools: Task, Read, Glob, Grep, Bash, sandbox_execute
 argument-hint: "skill name or 'all' (default: all)"
+disable-model-invocation: true
 ---
 
 # Skill Tester
