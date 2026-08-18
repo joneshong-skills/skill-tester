@@ -4,7 +4,6 @@ description: "tester, skills, test, run, tests, validate, check, skill 測試, �
 version: 0.2.0
 tools: Task, Read, Glob, Grep, Bash, sandbox_execute
 argument-hint: "skill name or 'all' (default: all)"
-disable-model-invocation: true
 ---
 
 # Skill Tester
