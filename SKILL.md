@@ -1,6 +1,6 @@
 ---
 name: skill-tester
-description: "tester, skills, test, run, tests, validate, check, skill 測試, 測試 skill, 跑一次 skill 驗證, skill 健康檢查"
+description: "tester, skills, test, run, tests, validate, check, skill 測試, 測試 skill, 跑一次 skill 驗證, skill 健康檢查。列出安裝清單用 /skill-catalog，找特定用途的 skill 用 /skill-proxy，看搭配關係用 /skill-graph"
 version: 0.2.0
 tools: Task, Read, Glob, Grep, Bash, sandbox_execute
 argument-hint: "skill name or 'all' (default: all)"
