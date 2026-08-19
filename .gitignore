@@ -6,3 +6,5 @@ observations.md
 lessons.md
 *.egg-info/
 .env
+
+evals/runs/

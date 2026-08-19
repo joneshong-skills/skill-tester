@@ -1,0 +1,10 @@
+{
+  "_schema_doc": "語義配置：給 fallback stub LLM 用的關鍵字 + 反義詞。LiteLLM 接得通時不必用，但建議填好以提供 LLM 額外提示。",
+  "skill_slug": "<slug>",
+  "version": 1,
+  "must_match_any": ["<關鍵字1>", "<關鍵字2>"],
+  "must_not_match_any": ["<反義詞1>", "<排除詞2>"],
+  "synonyms": {
+    "<主詞>": ["<同義詞1>", "<同義詞2>"]
+  }
+}

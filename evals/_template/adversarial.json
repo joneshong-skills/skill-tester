@@ -1,0 +1,15 @@
+{
+  "_schema_doc": "對抗集：故意用相似關鍵字但意圖不同的 prompt，期望 should_route=false。檢測 description 的負面樣本能力。",
+  "skill_slug": "<slug>",
+  "version": 1,
+  "cases": [
+    {
+      "case_id": "adv-001",
+      "user_prompt": "<相似關鍵字但實際不該命中的 prompt>",
+      "expected_skill": null,
+      "expected_should_route": false,
+      "category": "adversarial",
+      "rationale": "<這個 prompt 為什麼會誘導 false-positive>"
+    }
+  ]
+}

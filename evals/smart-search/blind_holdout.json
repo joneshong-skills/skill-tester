@@ -1,0 +1,12 @@
+{
+  "_schema_doc": "盲測：phrasing 不在 baseline_description 中出現",
+  "skill_slug": "smart-search",
+  "version": 1,
+  "cases": [
+    {"case_id": "bh-001", "user_prompt": "我想了解一下 Bun 1.2 的新特性", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "「了解一下」≠ description 既有觸發詞，但語意上需要 web 搜尋外部資訊"},
+    {"case_id": "bh-002", "user_prompt": "Anthropic 今天發布了什麼", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "純疑問句，無「搜尋」字眼但需查外部新聞"},
+    {"case_id": "bh-003", "user_prompt": "Compare LangGraph vs CrewAI", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "比較查詢需外部資訊，無「search」字眼"},
+    {"case_id": "bh-004", "user_prompt": "What is Pydantic AI's latest agent pattern?", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "純疑問且需 library docs 最新版本"},
+    {"case_id": "bh-005", "user_prompt": "Mojo 跟 Rust 在 SIMD 表現怎麼樣", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "技術比較問題，需 benchmark 外部資訊"}
+  ]
+}

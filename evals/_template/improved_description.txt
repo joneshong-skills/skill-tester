@@ -1,0 +1,10 @@
+This skill should be used when the user asks to "<more-precise trigger>",
+"<scenario-bound phrase>", "<繁中精準觸發詞>", explicitly mentions
+<concrete artefact>, or requests <specific outcome>. Avoid triggering on
+<near-miss topic> or generic <broad category> queries.
+
+# Notes
+# - 此檔案保存「改進版」description（A/B 中的 B）
+# - 命名規則：更具體的場景描述、明確排除負面 case、加上「Avoid」段落
+# - 升級條件見 evals/promotion_policy.md
+# - 通過盲測後可替換 SKILL.md frontmatter description

@@ -1,0 +1,8 @@
+This skill should be used when the user asks to "<verb-noun trigger phrase>",
+"<another phrase>", "<繁中觸發詞>", mentions <topic area>, or discusses
+<related concept>.
+
+# Notes
+# - 此檔案保存 SKILL.md 既有 description 的「基準版」原文（YAML frontmatter 拆解後）
+# - 跑 evals 時當作 baseline，與 improved_description.txt 做 A/B 比較
+# - 替換為實際 description 文字（不含 frontmatter 標記、不含 ">-" 折疊符號）

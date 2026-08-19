@@ -1,0 +1,31 @@
+{
+  "_schema_doc": "skill-slug 的 routing trigger 案例集。category=positive/negative/adversarial。positive=應命中本 skill；negative=應命中其他 skill 或不命中；adversarial=邊界相似但不應命中。每個 case 用真實 phrasing，不要從 SKILL.md description 直接複製（那是 baseline 已有）。",
+  "skill_slug": "<slug>",
+  "version": 1,
+  "cases": [
+    {
+      "case_id": "tc-001",
+      "user_prompt": "<繁中或英文真實使用者輸入>",
+      "expected_skill": "<slug>",
+      "expected_should_route": true,
+      "category": "positive",
+      "rationale": "<為什麼應該命中>"
+    },
+    {
+      "case_id": "tc-002",
+      "user_prompt": "<unrelated query>",
+      "expected_skill": null,
+      "expected_should_route": false,
+      "category": "negative",
+      "rationale": "<為什麼不該命中>"
+    },
+    {
+      "case_id": "tc-003",
+      "user_prompt": "<相似關鍵字但意圖不同>",
+      "expected_skill": null,
+      "expected_should_route": false,
+      "category": "adversarial",
+      "rationale": "<為什麼是邊界 case>"
+    }
+  ]
+}

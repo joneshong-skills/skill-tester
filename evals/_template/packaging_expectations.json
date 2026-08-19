@@ -1,0 +1,10 @@
+{
+  "_schema_doc": "skill 應有的最小檔案/欄位集合。skill-tester 跑 evals 前可順便檢查打包完整性。",
+  "skill_slug": "<slug>",
+  "version": 1,
+  "required_files": ["SKILL.md"],
+  "required_frontmatter": ["name", "description"],
+  "optional_files": ["README.md", "README.zh.md", "LICENSE", "scripts", "references", "assets"],
+  "max_skill_md_lines": 500,
+  "must_disable_model_invocation_if_categories": ["destructive", "expensive", "interactive-only"]
+}

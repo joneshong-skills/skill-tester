@@ -1,0 +1,9 @@
+This skill should be used when the user explicitly requests external information
+retrieval — "search the web", "look up documentation", "find latest news",
+"research a topic", "query library docs", "compare frameworks", or 繁中觸發詞
+"搜尋", "查一下", "幫我找", "找資料", "最新進展", "用 perplexity 找".
+Triggers on requests that need fresh external sources, library API references,
+or current events beyond model knowledge cutoff.
+Avoid triggering on: in-codebase symbol search ("find this function"),
+file lookups ("where is utils.py"), grep-style queries on local files,
+memory recall ("what did we say last time"), or workshop module questions.

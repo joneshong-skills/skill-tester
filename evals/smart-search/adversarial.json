@@ -1,0 +1,12 @@
+{
+  "_schema_doc": "對抗集：相似字面但不該命中 smart-search",
+  "skill_slug": "smart-search",
+  "version": 1,
+  "cases": [
+    {"case_id": "adv-001", "user_prompt": "幫我找 ~/workshop 下所有 *.py 檔", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「找」+ 本地路徑 = Glob 而非外部搜尋"},
+    {"case_id": "adv-002", "user_prompt": "搜尋 codebase 中用了 deprecated API 的地方", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「搜尋」+ codebase = Grep 而非外部 web"},
+    {"case_id": "adv-003", "user_prompt": "查一下我這個月花了多少錢", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「查」+ 個人帳務 = finance skill，不該觸發外部搜尋"},
+    {"case_id": "adv-004", "user_prompt": "research 這個 commit 為什麼會壞", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「research」+ 本地 git history = systematic-debugging，非 web research"},
+    {"case_id": "adv-005", "user_prompt": "find the bug in src/auth.py line 42", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「find」+ 具體檔案 = code reading，非外部 search"}
+  ]
+}

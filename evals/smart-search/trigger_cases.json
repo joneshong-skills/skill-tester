@@ -1,0 +1,18 @@
+{
+  "_schema_doc": "smart-search routing trigger 案例集（共 11 case = 5 pos + 3 neg + 3 adv）",
+  "skill_slug": "smart-search",
+  "version": 1,
+  "cases": [
+    {"case_id": "tc-001", "user_prompt": "搜尋一下 React Server Components 最新進展", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "明確 search + 外部資訊 + 最新"},
+    {"case_id": "tc-002", "user_prompt": "幫我找 Next.js 15 的 metadata API 文件", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "library docs lookup"},
+    {"case_id": "tc-003", "user_prompt": "look up the latest news about Anthropic", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "current events"},
+    {"case_id": "tc-004", "user_prompt": "research 2026 best practice for vector DB scaling", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "research topic + 時效性"},
+    {"case_id": "tc-005", "user_prompt": "用 perplexity 找一下 OpenAI o1 model 的限制", "expected_skill": "smart-search", "expected_should_route": true, "category": "positive", "rationale": "明確指定外部搜尋工具"},
+    {"case_id": "tc-006", "user_prompt": "幫我寫一個 useEffect 的範例", "expected_skill": null, "expected_should_route": false, "category": "negative", "rationale": "純 code generation，不需要外部搜尋"},
+    {"case_id": "tc-007", "user_prompt": "把這個影片轉成 mp3", "expected_skill": null, "expected_should_route": false, "category": "negative", "rationale": "media 處理，與搜尋無關"},
+    {"case_id": "tc-008", "user_prompt": "幫我 review 這段 code", "expected_skill": null, "expected_should_route": false, "category": "negative", "rationale": "code review，與外部搜尋無關"},
+    {"case_id": "tc-009", "user_prompt": "幫我找一下 utils.py 在哪", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「找」字面像 search，但實際是本地 file lookup（用 Glob/Grep）"},
+    {"case_id": "tc-010", "user_prompt": "查一下我們上次討論到哪", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「查」像搜尋，但實際是 memory recall（用 memvault）"},
+    {"case_id": "tc-011", "user_prompt": "搜尋這個 project 中所有 TODO comments", "expected_skill": null, "expected_should_route": false, "category": "adversarial", "rationale": "「搜尋」字面命中，但實際是 codebase grep"}
+  ]
+}

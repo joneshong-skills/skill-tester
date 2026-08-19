@@ -1,0 +1,11 @@
+{
+  "_schema_doc": "smart-search 關鍵字 + 反義詞，給 stub fallback 用",
+  "skill_slug": "smart-search",
+  "version": 1,
+  "must_match_any": ["search", "look up", "find latest", "research", "query docs", "搜尋", "查一下", "找資料", "幫我找", "最新", "新聞", "news", "perplexity", "deepwiki", "context7"],
+  "must_not_match_any": ["codebase", "在哪", "this file", "src/", "~/", "/workshop/", "function", "useEffect", "影片", "錢", "上次", "memory", "commit", "bug in"],
+  "synonyms": {
+    "search": ["搜尋", "查", "找", "look up", "research"],
+    "latest": ["最新", "今天", "current", "recent"]
+  }
+}

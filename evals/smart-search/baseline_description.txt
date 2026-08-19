@@ -1,0 +1,5 @@
+This skill should be used when the user asks to "search for information",
+"look up documentation", "find the latest news", "research a topic",
+"query library docs", "搜尋", "查一下", "幫我找",
+or discusses searching, researching, looking up documentation,
+finding current information, or querying technical references.

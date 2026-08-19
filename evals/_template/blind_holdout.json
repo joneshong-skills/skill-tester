@@ -1,0 +1,15 @@
+{
+  "_schema_doc": "盲測集：phrasing 不該在 SKILL.md description 出現，也不該與 trigger_cases 重複。用於檢測 description 是否 overfit 既有觸發詞。case 結構同 trigger_cases.json。",
+  "skill_slug": "<slug>",
+  "version": 1,
+  "cases": [
+    {
+      "case_id": "bh-001",
+      "user_prompt": "<完全不同 phrasing 但語意相同的請求>",
+      "expected_skill": "<slug>",
+      "expected_should_route": true,
+      "category": "positive",
+      "rationale": "<為什麼這個 phrasing 應該被識別到>"
+    }
+  ]
+}

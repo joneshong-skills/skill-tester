@@ -1,0 +1,10 @@
+{
+  "_schema_doc": "smart-search 應有的最小檔案/欄位集合",
+  "skill_slug": "smart-search",
+  "version": 1,
+  "required_files": ["SKILL.md", "scripts/usage_tracker.py", "references/search-strategy.md"],
+  "required_frontmatter": ["name", "description"],
+  "optional_files": ["README.md", "lessons.md"],
+  "max_skill_md_lines": 500,
+  "must_disable_model_invocation_if_categories": []
+}
