@@ -33,7 +33,7 @@ def parse_args():
         prog="run_all.py",
         description="Automates the T1-T4 skill health check pipeline.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Default output path: ~/workshop/outputs/skill-tester/{YYYY-MM-DD}-report.{ext}",
+        epilog="Default output path: ~/.claude/outputs/skill-tester/{YYYY-MM-DD}-report.{ext}",
     )
     parser.add_argument(
         "--skill",
